@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  	<meta charset="utf-8">
+		<title>System</title>
+		<style>
+			#container {
+				background: #000000;
+				width:100%;
+				height: 100%;
+			}
+            div
+            {
+                -webkit-user-select: none;
+                 -khtml-user-select: none;
+                   -moz-user-select: none;
+                    -ms-user-select: none;
+                     -o-user-select: none;
+                        user-select: none;
+            }
+		</style>
+	</head>
+	<body style="background-color:#000000;">
+		
+		<div id="container" style="cursor:move; position:absolute;">
+        <table style="background-color:Gray; cursor:auto;">
+        <tbody><tr><td colspan="2"><input id="table" type="range" min="1" max="25" step=".0001" value="1" onchange="updateSlider()"></td></tr>
+        <tr><td colspan="2"><input id="divisions" type="range" min="1" max="5" step=".001" value="1" onchange="updateSlider()"></td></tr>
+        <tr><td><button id="tview" onclick="updateView(1)">root 1</button></td><td><button id="rview" onclick="updateView(2)">root 1/2</button></td></tr>
+        </tbody></table></div>
+
+	
+	
+	<script type="text/javascript" src="./jquery.min.js"></script>
+	<script type="text/javascript" src="./three.min.js"></script>
+    <script type="text/javascript" src="./jquery.mousewheel.js"></script>
+	
+	<script type="text/javascript">
+
+	    var mX, mY, mD, mDY, mDX, pSY=0, pSX=0, cPZoom = 300, pV = true;
+
+    var WIDTH = window.innerWidth ,
+        HEIGHT = window.innerHeight;
+
+    var VIEW_ANGLE = 45,
+	    ASPECT = WIDTH / HEIGHT,
+	    NEAR = 0.01,
+	    FAR = 100000;
+    
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setClearColor(new THREE.Color(0, 1));
+    renderer.setSize(WIDTH, HEIGHT);
+
+    var $container = $('#container');
+    $container.append(renderer.domElement);
+
+    var camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, -3000, 3000);
+    camera.position.x = 0;
+    camera.position.y = 0;
+    camera.position.z = 1000;
+
+    var scene = new THREE.Scene();
+
+    var particles ,
+        particleSystem,
+		pMaterial = new THREE.ParticleBasicMaterial({
+		    color: 0xFF4411,
+		    size: 5,
+		    map: circleTexture(),
+		    blending: THREE.AdditiveBlending,
+		    transparent: true
+		});
+
+    Init();
+    function Init() {
+      GenerateSystem(1, 1, 2) 
+    }
+
+    function updateView(v) {
+
+        if (v == 1) { pSX = -Math.PI / 2; pSY = 0; }//log
+        if (v == 2) { pSX = 0; pSY = 0; }//e^i
+        particleSystem.rotation.x = pSX;
+        particleSystem.rotation.y = pSY;
+    }
+    function updateSlider() {
+
+        pSX = pSX;
+        psY = pSY;
+        GenerateSystem(
+        document.getElementById('divisions').value,
+        document.getElementById('table').value
+        );
+    }
+
+
+    function GenerateSystem(Divisions, Table) {
+
+        scene.remove(particleSystem);
+        particleSystem = null;
+        particles = new THREE.Geometry();
+        for (var t = 1; t <= Divisions; t++) {
+            //console.log('###################\t|' + t.toString());
+            for (var n = 1; n <= (t * Table); n++) {
+                var pX;
+                var pY;
+                var pZ;
+                var particle = new THREE.Vector3(pX, pY, pZ);
+                var scale = ((HEIGHT/2) / Table); 
+                //console.log('------------------');
+                for (var k = 1; k <= n; k++) {
+                    pY = (Math.pow(k * (n + 1 - k), 1 / 2) / t) * scale;
+                    pX = ((((n + 1) / 2) - k) / t) * scale;
+                    pZ = Math.sqrt((pY * pY) + (pX * pX));
+                   // console.log((k * (n + 1 - k)).toString() + '|' + (Math.pow(pY / scale, 1)).toString() + '\t|' + (pX / scale).toString());
+                    particle = new THREE.Vector3(pX, pY, pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, -pY, pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, pY, -pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, -pY, -pZ);
+                    particles.vertices.push(particle);
+                    //hyperbola
+                    pY = (Math.pow(Table, 1 / 2) ) * scale;
+                    pX = ((((n + 1) / 2) - k) / t) * scale;
+                    pZ = Math.sqrt((pY * pY) + (pX * pX));
+                    pY=0;
+                    particle = new THREE.Vector3(pX, pY, pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, -pY, pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, pY, -pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, -pY, -pZ);
+                    particles.vertices.push(particle);
+
+
+                    pY = (Math.pow(Table, 1 / 2) ) * scale;
+                    pX = ((((n + 1) / 2) - k) / t) * scale;
+                    pZ = Math.sqrt((pY * pY) + (pX * pX));
+
+                    particle = new THREE.Vector3(pX, pY, pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, -pY, pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, pY, -pZ);
+                    particles.vertices.push(particle);
+                    particle = new THREE.Vector3(pX, -pY, -pZ);
+                    particles.vertices.push(particle);
+
+
+
+                }
+            }
+           // console.log('------------------');
+        }
+        particleSystem = new THREE.ParticleSystem(particles, pMaterial);
+        particleSystem.sortParticles = true;
+        particleSystem.rotation.x = pSX;
+        particleSystem.rotation.y = pSY;
+        scene.add(particleSystem);
+    }
+
+    function circleTexture() {
+        var canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        var context = canvas.getContext('2d');
+        context.beginPath();
+        context.arc(50, 50, 50, 0, Math.PI * 2, true);
+        context.closePath();
+        context.fillStyle = "white";
+        context.fill();
+        texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    jQuery(document).ready(function () {
+        $(document).mousedown(function (m) {
+            if (m.target.id == "") {
+                mD = m.which;
+                mDX = mX;
+                mDY = mY;
+                pSX = particleSystem.rotation.x;
+                pSY = particleSystem.rotation.y;
+            }
+        }); //mousedown
+        $(document).mouseup(function (t) {
+            if (mD == 1) {
+                pSX = particleSystem.rotation.x;
+                pSY = particleSystem.rotation.y;
+            }
+            mD = 0;
+        }); //mouseup
+        $(document).mousemove(function (e) {
+            mX = e.pageX;
+            mY = e.pageY;
+        }); //mousemove
+        $(document).mousewheel(function (e, delta) {
+            cPZoom += (-delta * 10);
+        }); //mousewheel
+
+    });
+
+
+	// @see http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+	window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       || 
+              window.webkitRequestAnimationFrame || 
+              window.mozRequestAnimationFrame    || 
+              window.oRequestAnimationFrame      || 
+              window.msRequestAnimationFrame     || 
+              function(/* function */ callback, /* DOMElement */ element){
+                window.setTimeout(callback, 1000 / 60);
+              };
+        })();
+
+	function update() {
+	    if (mD == 1) {
+	        particleSystem.rotation.y = pSY +( - Math.PI * ((mDX - mX) / 500));
+	        particleSystem.rotation.x = pSX - (Math.PI * ((mDY - mY) / 500));
+	    }
+		particleSystem.geometry.__dirtyVertices = true;
+		renderer.render(scene, camera);
+		requestAnimFrame(update);
+}
+
+	requestAnimFrame(update);
+	</script>
+</body></html>
