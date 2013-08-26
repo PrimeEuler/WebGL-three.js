@@ -22,11 +22,11 @@
 	</head>
 	<body style="background-color:#000000;">
 		
-		<div id="container" style="cursor:move; position:absolute;">
-        <table style="background-color:Gray; cursor:auto;">
-        <tbody><tr><td colspan="2"><input id="table" type="range" min="1" max="25" step=".0001" value="1" onchange="updateSlider()"></td></tr>
-        <tr><td colspan="2"><input id="divisions" type="range" min="1" max="5" step=".001" value="1" onchange="updateSlider()"></td></tr>
-        <tr><td><button id="tview" onclick="updateView(1)">root 1</button></td><td><button id="rview" onclick="updateView(2)">root 1/2</button></td></tr>
+		<div id="container" style="cursor:move; position:absolute; ">
+        <table style="background-color:Gray; cursor:auto;width:200px;" >
+        <tbody><tr><td colspan="1"><input id="table" type="range" min="1" max="25" step=".0001" value="1" onchange="updateSlider()"></td><td id="tablevalue" colspan="2" >1</td></tr>
+        <tr><td colspan="1"><input id="divisions" type="range" min="1" max="5" step=".001" value="1" onchange="updateSlider()"></td><td id="divisionsvalue" colspan="2">1</td></tr>
+        <tr><td><button id="tview" onclick="updateView(1)">root 1</button><button id="rview" onclick="updateView(2)">root 1/2</button></td><td id="rootvalue" colspan="2"></td></tr>
         </tbody></table></div>
 
 	
@@ -87,6 +87,8 @@
 
         pSX = pSX;
         psY = pSY;
+        document.getElementById('divisionsvalue').innerHTML = document.getElementById('divisions').value;
+        document.getElementById('tablevalue').innerHTML = document.getElementById('table').value;
         GenerateSystem(
         document.getElementById('divisions').value,
         document.getElementById('table').value
