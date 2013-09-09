@@ -23,11 +23,37 @@
 	<body style="background-color:#000000;">
 		
 		<div id="container" style="cursor:move; position:absolute; ">
-        <table style="background-color:Gray; cursor:auto;width:200px;" >
-        <tbody><tr><td colspan="1"><input id="table" type="range" min="1" max="25" step=".0001" value="1" onchange="updateSlider()"></td><td id="tablevalue" colspan="2" >1</td></tr>
-        <tr><td colspan="1"><input id="divisions" type="range" min="1" max="5" step=".001" value="1" onchange="updateSlider()"></td><td id="divisionsvalue" colspan="2">1</td></tr>
-        <tr><td><button id="tview" onclick="updateView(1)">root 1</button><button id="rview" onclick="updateView(2)">root 1/2</button></td><td id="rootvalue" colspan="2"></td></tr>
-        </tbody></table></div>
+        <table style="background-color:Gray; cursor:auto;width:210px;" >
+        <tbody>
+               <tr>
+                 <td colspan="3">
+                     <button id="tview" style="width : 100px;"  onclick="updateView('manual')"> SQRT(1)</button>
+                     <button id="auto"  style="width : 100px;" onclick="updateView('auto')">AUTO</button>
+                 </td>
+             </tr>
+            <tr>
+                <td colspan="1">
+                    <input id="n" type="range" min="1" max="25" step=".0001" value="1" onchange="updateSlider()">
+                </td>
+                <td id="tablevalue" colspan="2" >
+                    1
+                </td>
+            </tr>
+            <tr>
+                <td colspan="1">
+                    <input id="divisions" type="range" min="1" max="12" step="1" value="1" onchange="updateSlider()">
+                </td>
+                <td id="divisionsvalue" colspan="2">
+                    1
+                </td>
+            </tr>
+                <tr>
+                 <td id="equation" colspan="3">
+                 </td>
+             </tr>
+        </tbody>
+        </table>
+		</div>
 
 	
 	
@@ -37,7 +63,7 @@
 	
 	<script type="text/javascript">
 
-	    var mX, mY, mD, mDY, mDX, pSY=0, pSX=0, cPZoom = 300, pV = true;
+	var mX, mY, mD, mDY, mDX, pSY=0, pSX=0, cPZoom = 300, pV = true;
 
     var WIDTH = window.innerWidth ,
         HEIGHT = window.innerHeight;
@@ -46,6 +72,12 @@
 	    ASPECT = WIDTH / HEIGHT,
 	    NEAR = 0.01,
 	    FAR = 100000;
+    
+    var FUNC = "SQRT";
+    var AUTO = true;
+    var Timer = window.setInterval(function () {
+        updateSlider();
+    }, 50);
     
     var renderer = new THREE.WebGLRenderer();
     renderer.setClearColor(new THREE.Color(0, 1));
@@ -58,9 +90,7 @@
     camera.position.x = 0;
     camera.position.y = 0;
     camera.position.z = 1000;
-
     var scene = new THREE.Scene();
-
     var particles ,
         particleSystem,
 		pMaterial = new THREE.ParticleBasicMaterial({
@@ -75,87 +105,90 @@
     function Init() {
       GenerateSystem(1, 1, 2) 
     }
-
     function updateView(v) {
-
-        if (v == 1) { pSX = -Math.PI / 2; pSY = 0; }//log
-        if (v == 2) { pSX = 0; pSY = 0; }//e^i
-        particleSystem.rotation.x = pSX;
-        particleSystem.rotation.y = pSY;
+        if (v == "auto") {
+            if (AUTO == true) {
+                AUTO = false;
+                document.getElementById('auto').innerHTML = "MANUAL";
+            } else {
+                AUTO = true;
+                document.getElementById('auto').innerHTML = "AUTO";
+            }
+        }
+        else {
+            switch (FUNC) {
+                case "SQRT":
+                    pSX = -Math.PI / 2;
+                    pSY = 0;
+                    FUNC = "LOG";
+                    document.getElementById('tview').innerHTML = FUNC + "(" + document.getElementById('n').value + ")";
+                    break;
+                case "LOG":
+                    pSX = 0;
+                    pSY = 0;
+                    FUNC = "SQRT";
+                    document.getElementById('tview').innerHTML = FUNC + "(" + document.getElementById('n').value + ")";
+                    break;
+                default:
+                    break;
+            }
+            particleSystem.rotation.x = pSX;
+            particleSystem.rotation.y = pSY;
+        }
     }
     function updateSlider() {
+
+        if (AUTO == true) {
+            var val = parseFloat(document.getElementById('n').value);
+            if (val == 25) {
+                val = 1;
+            }
+            val = val + .1;
+            document.getElementById('n').value = val;
+        }
 
         pSX = pSX;
         psY = pSY;
         document.getElementById('divisionsvalue').innerHTML = document.getElementById('divisions').value;
-        document.getElementById('tablevalue').innerHTML = document.getElementById('table').value;
-        GenerateSystem(
-        document.getElementById('divisions').value,
-        document.getElementById('table').value
-        );
+        document.getElementById('tablevalue').innerHTML = document.getElementById('n').value;
+        document.getElementById('tview').innerHTML = FUNC + "(" + document.getElementById('n').value + ")";
+        var N = parseFloat(document.getElementById('n').value);
+        var Divisions = parseInt(document.getElementById('divisions').value);
+        document.getElementById('equation').innerHTML = "N=" + N;
+        GenerateSystem(Divisions,N);
+
     }
 
 
-    function GenerateSystem(Divisions, Table) {
-
+    function GenerateSystem(Divisions, N) {
         scene.remove(particleSystem);
         particleSystem = null;
         particles = new THREE.Geometry();
         for (var t = 1; t <= Divisions; t++) {
-            //console.log('###################\t|' + t.toString());
-            for (var n = 1; n <= (t * Table); n++) {
+            for (var n = 1; n <= (t * N); n++) {
                 var pX;
                 var pY;
                 var pZ;
-                var particle = new THREE.Vector3(pX, pY, pZ);
-                var scale = ((HEIGHT/2) / Table); 
-                //console.log('------------------');
+                var scale = ((HEIGHT/2) / N); 
                 for (var k = 1; k <= n; k++) {
+                    //cone surface
                     pY = (Math.pow(k * (n + 1 - k), 1 / 2) / t) * scale;
                     pX = ((((n + 1) / 2) - k) / t) * scale;
                     pZ = Math.sqrt((pY * pY) + (pX * pX));
-                   // console.log((k * (n + 1 - k)).toString() + '|' + (Math.pow(pY / scale, 1)).toString() + '\t|' + (pX / scale).toString());
-                    particle = new THREE.Vector3(pX, pY, pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, -pY, pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, pY, -pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, -pY, -pZ);
-                    particles.vertices.push(particle);
-                    //hyperbola
-                    pY = (Math.pow(Table, 1 / 2) ) * scale;
+                    GenerateParticles(particles, pX, pY, pZ);
+                    //hyperbola (y axis)
+                    pY = Math.sqrt(N) * scale;
                     pX = ((((n + 1) / 2) - k) / t) * scale;
                     pZ = Math.sqrt((pY * pY) + (pX * pX));
-                    pY=0;
-                    particle = new THREE.Vector3(pX, pY, pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, -pY, pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, pY, -pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, -pY, -pZ);
-                    particles.vertices.push(particle);
-
-
-                    pY = (Math.pow(Table, 1 / 2) ) * scale;
+                    pY = 0;
+                    GenerateParticles(particles, pX, pY, pZ);
+                    //hyperbolas (cone surface) 
+                    pY = Math.sqrt(N) * scale;
                     pX = ((((n + 1) / 2) - k) / t) * scale;
                     pZ = Math.sqrt((pY * pY) + (pX * pX));
-
-                    particle = new THREE.Vector3(pX, pY, pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, -pY, pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, pY, -pZ);
-                    particles.vertices.push(particle);
-                    particle = new THREE.Vector3(pX, -pY, -pZ);
-                    particles.vertices.push(particle);
-
-
-
+                    GenerateParticles(particles, pX, pY, pZ);
                 }
             }
-           // console.log('------------------');
         }
         particleSystem = new THREE.ParticleSystem(particles, pMaterial);
         particleSystem.sortParticles = true;
@@ -163,6 +196,21 @@
         particleSystem.rotation.y = pSY;
         scene.add(particleSystem);
     }
+    
+    function GenerateParticles(particles, pX, pY, pZ) {
+        var particle = new THREE.Vector3(pX, pY, pZ);
+        particles.vertices.push(particle);
+
+        particle = new THREE.Vector3(pX, -pY, pZ);
+        particles.vertices.push(particle);
+
+        particle = new THREE.Vector3(pX, pY, -pZ);
+        particles.vertices.push(particle);
+
+        particle = new THREE.Vector3(pX, -pY, -pZ);
+        particles.vertices.push(particle);
+    }
+
 
     function circleTexture() {
         var canvas = document.createElement('canvas');
@@ -178,7 +226,6 @@
         texture.needsUpdate = true;
         return texture;
     }
-
     jQuery(document).ready(function () {
         $(document).mousedown(function (m) {
             if (m.target.id == "") {
@@ -205,8 +252,6 @@
         }); //mousewheel
 
     });
-
-
 	// @see http://paulirish.com/2011/requestanimationframe-for-smart-animating/
 	window.requestAnimFrame = (function(){
       return  window.requestAnimationFrame       || 
@@ -218,7 +263,6 @@
                 window.setTimeout(callback, 1000 / 60);
               };
         })();
-
 	function update() {
 	    if (mD == 1) {
 	        particleSystem.rotation.y = pSY +( - Math.PI * ((mDX - mX) / 500));
@@ -226,9 +270,9 @@
 	    }
 		particleSystem.geometry.__dirtyVertices = true;
 		renderer.render(scene, camera);
+
 		requestAnimFrame(update);
 }
-
 	requestAnimFrame(update);
 	</script>
 </body></html>
